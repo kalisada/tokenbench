@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { JSX } from "preact";
+import { trackOnce } from "@lib/analytics";
 import { SUPPORTED_ALGS, getAlgorithm } from "@lib/jwt/algorithms";
 import { generateKeyPair, type SecretEncoding } from "@lib/jwt/keys";
 import { defaultPayload, parseRelativeExpiry, signJwt } from "@lib/jwt/sign";
@@ -75,6 +76,10 @@ export default function Generator(): JSX.Element {
         if (!current) return;
         setToken(next);
         setError(undefined);
+        // S33: which algorithms people actually reach for, and how many are
+        // testing their rejection path. The token itself is never touched.
+        trackOnce("tool_used", { tool: "generator" });
+        trackOnce("token_generated", { alg, tamper });
       })
       .catch((e: unknown) => {
         if (!current) return;
@@ -218,7 +223,7 @@ export default function Generator(): JSX.Element {
                       <div class="btn-row" style="margin-bottom:6px">
                         <label style="margin:0">Public key (give this to the verifier)</label>
                         <span style="margin-left:auto">
-                          <CopyButton value={publicKey} />
+                          <CopyButton value={publicKey} what="public_key" />
                         </span>
                       </div>
                       <pre class="code wrap">{publicKey}</pre>
@@ -276,7 +281,7 @@ export default function Generator(): JSX.Element {
             <div class="btn-row" style="margin-bottom:10px">
               <p class="panel__title" style="margin:0">Token</p>
               <span style="margin-left:auto">
-                <CopyButton value={token} label="Copy token" />
+                <CopyButton value={token} label="Copy token" what="token" />
               </span>
             </div>
 

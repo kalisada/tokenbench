@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { JSX } from "preact";
+import { trackOnce } from "@lib/analytics";
 import { getAlgorithm } from "@lib/jwt/algorithms";
 import { decodeJwt } from "@lib/jwt/decode";
 import { looksLikeJwks } from "@lib/jwt/keys";
@@ -109,15 +110,32 @@ export default function Validator(): JSX.Element {
     });
   }, [result, key, isHmac, source]);
 
+  // S33. The verdict and the algorithm name only — never the token, the key, or
+  // the URL. Queued in memory; nothing goes out until the page closes.
+  useEffect(() => {
+    if (!result) return;
+    trackOnce("tool_used", { tool: "validator" });
+    trackOnce("verify_result", {
+      result: result.signature,
+      alg: result.decoded.header.alg ?? "none",
+    });
+    for (const lint of lints) trackOnce("lint_shown", { lint: lint.id });
+  }, [result, lints]);
+
   const doFetch = async (): Promise<void> => {
     setFetchState({ kind: "loading" });
     try {
       const fetched = await fetchJwks(jwksUrl);
       setJwks(fetched);
       setFetchState({ kind: "idle" });
+      trackOnce("jwks_fetch", { outcome: "ok" });
     } catch (error) {
+      const failure = error as JwksFetchError;
       setJwks(undefined);
-      setFetchState({ kind: "error", error: error as JwksFetchError });
+      setFetchState({ kind: "error", error: failure });
+      // The CORS failure rate is the single most useful number S33 asks for:
+      // it sizes how many visitors are wrestling with a real JWKS endpoint.
+      trackOnce("jwks_fetch", { outcome: failure.corsLikely ? "cors_blocked" : "failed" });
     }
   };
 

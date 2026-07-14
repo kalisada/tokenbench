@@ -1,5 +1,6 @@
 import { useCallback, useState } from "preact/hooks";
 import type { JSX } from "preact";
+import { trackOnce } from "@lib/analytics";
 import { JsonView } from "./JsonView";
 import type { Lint } from "@lib/jwt/lint";
 import { describeTimestamp } from "@lib/jwt/decode";
@@ -8,18 +9,22 @@ import type { DecodedJwt, JwtPayload, TimeVerdict } from "@lib/jwt/types";
 export function CopyButton({
   value,
   label = "Copy",
+  what,
 }: {
   value: string;
   label?: string;
+  /** S33 counts *that* a copy happened. `value` is never passed to analytics. */
+  what?: string;
 }): JSX.Element {
   const [copied, setCopied] = useState(false);
 
   const copy = useCallback(() => {
     void navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
+      if (what) trackOnce("copy", { what });
       setTimeout(() => setCopied(false), 1400);
     });
-  }, [value]);
+  }, [value, what]);
 
   return (
     <button type="button" onClick={copy} disabled={value === ""}>

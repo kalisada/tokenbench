@@ -1,5 +1,6 @@
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import type { JSX } from "preact";
+import { trackOnce } from "@lib/analytics";
 import { decodeJwt, evaluateTime } from "@lib/jwt/decode";
 import { lintToken } from "@lib/jwt/lint";
 import { JweError, JwtDecodeError, type DecodedJwt } from "@lib/jwt/types";
@@ -85,6 +86,14 @@ export default function Decoder(): JSX.Element {
 function Decoded({ decoded }: { decoded: DecodedJwt }): JSX.Element {
   const time = evaluateTime(decoded.payload);
   const lints = lintToken(decoded);
+
+  // S33: counted in memory, transmitted only when the page closes. `alg` is the
+  // header's algorithm name and nothing else — see the allowlist in analytics.ts.
+  useEffect(() => {
+    trackOnce("tool_used", { tool: "decoder" });
+    trackOnce("verify_result", { result: "decoded", alg: decoded.header.alg ?? "none" });
+    for (const lint of lints) trackOnce("lint_shown", { lint: lint.id });
+  }, [decoded, lints]);
 
   return (
     <div style="margin-top:16px">

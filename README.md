@@ -49,14 +49,31 @@ It drives the system Chrome; override with `CHROME_PATH` if yours lives elsewher
 - **`public/sw.js`** — offline support. Only ever touches same-origin GETs; the
   cross-origin JWKS fetch goes straight to the network, uncached.
 
+## Analytics
+
+S33 wants to know which lints fire and how often a JWKS fetch dies on CORS. S30 promises
+the visitor that pasting a token sends nothing. Those pull against each other, because
+the events S33 wants are triggered by pasting.
+
+The reconciliation: **events are counted in memory and flushed in a single beacon when
+the page closes.** A visitor's whole session makes zero analytics requests, so the
+devtools demo survives being tested. There is no third-party script — the beacon goes to
+`/api/event` on our own origin, and a Cloudflare Pages Function forwards it to Plausible
+server-side, so no third-party host ever appears in a Network tab.
+
+What can be transmitted is a **closed vocabulary** (`src/lib/analytics.ts`), enforced
+again in the Function. Not a pattern — the first version used one, and the test suite
+walked a 19-character secret and a base64url fragment straight through it. Adding a
+metric means adding its permitted values by hand; that friction is the point.
+
+Set `PLAUSIBLE_DOMAIN` (and optionally `PLAUSIBLE_HOST`) in the Pages environment.
+
 ## Before launch
 
 Live at **tokenbench.dev**.
 
-- [ ] Set `REPO_URL` in `src/lib/site.ts` to the real repository. The footer's "Verify
-      the code" link is load-bearing — the privacy claim is only checkable if it resolves.
-- [ ] Wire up privacy-preserving analytics (counters only — the privacy page already
-      documents exactly what may and may not be recorded; keep it honest).
+- [ ] Set `PLAUSIBLE_DOMAIN=tokenbench.dev` in the Cloudflare Pages environment, and add
+      the site in Plausible. Without it the Function drops events silently.
 - [ ] Re-verify the SERP for "jwt validator" before committing further effort.
       The spec's kill criterion: if 2+ more complete-suite entrants have appeared,
       downgrade to phase 1 only and reassess.

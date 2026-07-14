@@ -3,12 +3,25 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "types": ["vitest/globals"],
+    "types": [
+      "vitest/globals",
+      "@cloudflare/workers-types"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@lib/*": ["src/lib/*"]
+      "@lib/*": [
+        "src/lib/*"
+      ]
     }
   },
-  "include": ["src/**/*", "*.config.ts", "*.config.mjs"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src/**/*",
+    "functions/**/*",
+    "*.config.ts",
+    "*.config.mjs"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }

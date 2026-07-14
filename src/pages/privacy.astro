@@ -63,21 +63,44 @@ import { SITE, REPO_URL } from "../lib/site";
     <h2>What we do measure</h2>
     <p>
       We count usage in aggregate, so we know which tools are worth improving and can describe
-      the audience to potential sponsors. The measurement is privacy-preserving analytics with
-      no cookies and no cross-site tracking, and it records only:
+      the audience to potential sponsors. The measurement is cookieless, has no cross-site
+      tracking, and records only:
     </p>
     <ul>
       <li>Page views, referrer, and coarse country — the standard, cookieless kind.</li>
-      <li>Which tool was used, as a counter. Not what it was used on.</li>
+      <li>Which tool was used. Not what it was used on.</li>
       <li>Which lint categories fired — e.g. that an <code>alg:none</code> warning was shown. Never the token that triggered it.</li>
       <li>Whether a JWKS fetch was attempted, and whether it failed on CORS. Never the URL.</li>
       <li>The algorithm name from a token header — the string <code>"RS256"</code>, nothing else from the token.</li>
       <li>That a copy button was pressed. Not what was copied.</li>
     </ul>
+
+    <h3>Nothing is sent while you work</h3>
     <p>
-      Every one of those is an event name and a count. None of them can carry the content of
-      anything you paste, because the content is never passed to the analytics call in the
-      first place — you can confirm that in the source.
+      Those events are counted in your browser's memory and transmitted in a single request
+      <strong>when you close the page</strong>. This is deliberate. The promise at the top of
+      this page — open devtools, paste a token, watch nothing be sent — has to survive being
+      tested, and it would not survive an analytics beacon firing the moment you paste. So
+      none of them fire while the page is open. Your entire session makes zero analytics
+      requests.
+    </p>
+    <p>
+      Every one of those events is a name and a count. None can carry the content of anything
+      you paste, and that is enforced rather than merely intended: the analytics code accepts
+      a fixed list of property names, and rejects any value longer than 24 characters or
+      containing the characters a token is built from. A JWT cannot pass through it. That
+      restriction is in <code>src/lib/analytics.ts</code>, it is enforced a second time on the
+      server, and there is a test whose entire job is to try to smuggle a token, a secret and
+      a private key past it.
+    </p>
+
+    <h3>No third-party analytics script</h3>
+    <p>
+      There isn't one. Most sites embed a vendor's JavaScript, which means the vendor's server
+      appears in your Network tab and their code runs on the same page as your token. We
+      don't. The single request described above goes to <code>tokenbench.dev</code> — this
+      site — and our server forwards the counts onward. No third-party host is ever contacted
+      by your browser, and no third-party code ever runs next to your inputs.
     </p>
 
     <h2>Storage and cookies</h2>

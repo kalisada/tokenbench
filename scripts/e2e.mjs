@@ -74,7 +74,20 @@ async function main() {
 
   // Record every request the page makes, for the S30 assertion below.
   const requests = [];
-  page.on("request", (req) => requests.push({ url: req.url(), body: req.postData() ?? "" }));
+  page.on("request", (req) => {
+    // sendBeacon sends a Blob, and postData() returns null for it — the body is
+    // only visible via the buffer. Reading only postData() would let the beacon
+    // assertions below pass on an empty string, i.e. pass vacuously.
+    let body = req.postData() ?? "";
+    if (!body) {
+      try {
+        body = req.postDataBuffer()?.toString("utf8") ?? "";
+      } catch {
+        body = "";
+      }
+    }
+    requests.push({ url: req.url(), body });
+  });
 
   try {
     // --- S1: decode -------------------------------------------------------
@@ -104,6 +117,13 @@ async function main() {
       crossOrigin.map((r) => r.url).join(", "));
     check("the token appears in zero requests", leaks.length === 0,
       `${leaks.length} request(s) carried it`);
+
+    // The reconciliation of S30 and S33: analytics is counted in memory and sent
+    // only on page exit, so pasting a token fires nothing. This is the assertion
+    // that keeps the devtools demo honest.
+    const beaconsWhileWorking = newRequests.filter((r) => r.url.includes("/api/event"));
+    check("pasting a token fires no analytics beacon", beaconsWhileWorking.length === 0,
+      `${beaconsWhileWorking.length} beacon(s) fired while the page was open`);
 
     // --- S2: expired ------------------------------------------------------
     console.log("\nExpiry (S2/S3)");
@@ -240,6 +260,61 @@ async function main() {
     check("nothing written to localStorage", stored.local === "{}", stored.local);
     check("nothing written to sessionStorage", stored.session === "{}", stored.session);
     check("no cookies set", stored.cookies === "", stored.cookies);
+
+    // --- S33: the exit beacon --------------------------------------------
+    console.log("\nAnalytics (S33)");
+    const before = requests.length;
+
+    // Drive the visibilitychange path rather than a real navigation: a request
+    // fired during unload is not reliably attributed to the page by the
+    // devtools protocol, so testing via `goto` would be flaky for reasons that
+    // have nothing to do with our code. This is also the handler that carries
+    // the load on mobile, where pagehide frequently never fires at all.
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", {
+        value: "hidden",
+        configurable: true,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.waitForTimeout(500);
+
+    const beacons = requests.slice(before).filter((r) => r.url.includes("/api/event"));
+    check("a beacon is sent when the page is closed", beacons.length >= 1,
+      "no beacon fired — the S33 counters would never arrive");
+
+    const payload = beacons[0]?.body ?? "";
+
+    // Guard against the assertions below passing on an empty body.
+    check("the beacon body is readable", payload.length > 0,
+      "empty body — the checks below would pass vacuously");
+
+    check("the beacon carries no token",
+      payload.length > 0 && !payload.includes(HS256_TOKEN.slice(0, 30)),
+      payload.slice(0, 120));
+
+    // Every event name and every property value must come from the closed
+    // vocabulary. Anything else means user content reached the wire.
+    let vocabOk = false;
+    try {
+      const parsed = JSON.parse(payload);
+      const NAMES = ["pageview", "tool_used", "verify_result", "lint_shown", "jwks_fetch", "token_generated", "copy"];
+      const VALUES = /^[A-Za-z0-9_-]{1,24}$/;
+      vocabOk =
+        Array.isArray(parsed.events) &&
+        parsed.events.length > 0 &&
+        parsed.events.every(
+          (e) =>
+            NAMES.includes(e.name) &&
+            Object.values(e.props ?? {}).every((v) => VALUES.test(String(v))),
+        ) &&
+        !JSON.stringify(parsed).includes(HS256_SECRET);
+    } catch {
+      vocabOk = false;
+    }
+    check("the beacon carries only enumerated values", vocabOk, payload.slice(0, 200));
+
+    if (payload) console.log(`      beacon: ${payload.slice(0, 200)}`);
   } finally {
     await browser.close();
     server.kill();

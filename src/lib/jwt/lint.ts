@@ -9,8 +9,27 @@ import type { DecodedJwt } from "./types";
 
 export type LintLevel = "red" | "amber" | "info";
 
+/**
+ * The closed set of lint ids. Analytics reports which of these fired (S33), and
+ * only reports values it can enumerate — so a lint added here without being
+ * added there would be silently dropped. Deriving the vocabulary from this
+ * constant makes that a compile error instead of a missing metric.
+ */
+export const LINT_IDS = [
+  "alg-none",
+  "alg-unknown",
+  "weak-secret",
+  "short-secret",
+  "no-exp",
+  "long-lived",
+  "no-timestamps",
+  "kid",
+] as const;
+
+export type LintId = (typeof LINT_IDS)[number];
+
 export interface Lint {
-  readonly id: string;
+  readonly id: LintId;
   readonly level: LintLevel;
   readonly title: string;
   readonly detail: string;
