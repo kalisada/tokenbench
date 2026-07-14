@@ -9,7 +9,9 @@
   --panel-alt: #f4f2ed;
   --ink: #1b1c1f;
   --ink-soft: #5c5f66;
-  --ink-faint: #8b8f97;
+  /* 5.2:1 on --panel. The obvious lighter grey lands around 3:1 and fails AA on
+     the small-caps panel titles, which are 12px. */
+  --ink-faint: #6a6d74;
   --line: #e2ded6;
   --accent: #0b6e79;
   --accent-ink: #ffffff;
@@ -38,7 +40,9 @@
     --panel-alt: #23262d;
     --ink: #e8e6e1;
     --ink-soft: #a3a7b0;
-    --ink-faint: #767b85;
+    /* 5.9:1 on the dark --panel. Lighthouse only audits the light theme, so this
+       one has to be checked by hand — the prior value sat at ~3.9:1. */
+    --ink-faint: #949aa4;
     --line: #2e323a;
     --accent: #4fc3cf;
     --accent-ink: #10262a;

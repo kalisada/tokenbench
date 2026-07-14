@@ -230,7 +230,7 @@ export default function Generator(): JSX.Element {
           </div>
 
           <div class="panel">
-            <p class="panel__title">Payload</p>
+            <label class="panel__title" for="payload">Payload</label>
             <textarea
               id="payload"
               class="token-input"
@@ -256,7 +256,7 @@ export default function Generator(): JSX.Element {
           </div>
 
           <div class="panel">
-            <p class="panel__title">Header extras</p>
+            <label class="panel__title" for="header">Header extras</label>
             <textarea
               id="header"
               spellcheck={false}
