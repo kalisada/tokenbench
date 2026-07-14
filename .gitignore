@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+.DS_Store
+*.log
+
+# Never commit real keys or tokens. Test fixtures live in src/lib/jwt/fixtures.ts
+# and are deliberately throwaway.
+*.pem
+!src/**/*.pem
+.env
+.env.*
+
+docs/confidential
