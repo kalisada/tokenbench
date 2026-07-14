@@ -1,0 +1,187 @@
+---
+import Layout, { type Faq } from "../layouts/Layout.astro";
+import Decoder from "../components/Decoder";
+import ProofStrip from "../components/ProofStrip.astro";
+import ToolLinks from "../components/ToolLinks.astro";
+import FaqList from "../components/Faq.astro";
+
+// Code samples live here rather than inline: Astro parses `{}` in markup as
+// expressions, and braces are unavoidable in most languages.
+const NODE = `// No dependency needed — it's just base64url and JSON.
+const [header, payload] = token
+  .split('.')
+  .slice(0, 2)
+  .map((seg) => JSON.parse(Buffer.from(seg, 'base64url').toString('utf8')));
+
+console.log(header.alg, payload.exp);`;
+
+const PYTHON = `import base64, json
+
+def decode_segment(seg: str) -> dict:
+    # base64url in a JWT drops padding; add it back before decoding.
+    padded = seg + "=" * (-len(seg) % 4)
+    return json.loads(base64.urlsafe_b64decode(padded))
+
+header, payload = (decode_segment(s) for s in token.split(".")[:2])
+print(header["alg"], payload["exp"])`;
+
+const GO = `import (
+    "encoding/base64"
+    "encoding/json"
+    "strings"
+)
+
+parts := strings.Split(token, ".")
+raw, err := base64.RawURLEncoding.DecodeString(parts[1])
+if err != nil {
+    return err
+}
+
+var payload map[string]any
+if err := json.Unmarshal(raw, &payload); err != nil {
+    return err
+}`;
+
+const JAVA = `import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+
+String[] parts = token.split("\\\\.");
+String payload = new String(
+    Base64.getUrlDecoder().decode(parts[1]),
+    StandardCharsets.UTF_8
+);
+// Parse the payload with Jackson or Gson as needed.`;
+
+const faqs: Faq[] = [
+  {
+    q: "Is it safe to paste a real JWT here?",
+    a: "Yes, and you don't have to take our word for it. The decoder runs entirely in your browser — open devtools, switch to the Network tab, and paste a token. No request is made. The source is public, and the page works with your network disconnected.",
+  },
+  {
+    q: "Does decoding a JWT reveal the secret?",
+    a: "No. A JWT's header and payload are base64url-encoded, not encrypted — anyone holding the token can already read them. The signature proves the token was issued by someone holding the key, but it does not hide the contents. Never put anything in a JWT payload that the bearer should not see.",
+  },
+  {
+    q: "Why does my expired token still decode?",
+    a: "Because decoding and validating are different operations. Expiry is a claim inside the payload, not a property of the encoding, so an expired token decodes exactly like a fresh one. That is deliberate here — you are usually looking at a token precisely because it expired, and a tool that refuses to show you why is useless.",
+  },
+  {
+    q: "What does 'Invalid Signature' mean if the payload looks right?",
+    a: "It means the token was not signed by the key you supplied. Either you are checking against the wrong key, the token came from a different environment, or something modified it in transit. Use the validator to check the signature against a secret, PEM or JWKS.",
+  },
+  {
+    q: "Can this decode an encrypted token (JWE)?",
+    a: "No, and nothing can without the decryption key. A five-segment token is a JWE: its payload is ciphertext. This tool handles signed tokens (JWS), which is what almost everyone means by 'JWT'. If you paste a JWE, the decoder will tell you that is what you have.",
+  },
+];
+---
+
+<Layout
+  title="JWT Decoder — decode any JSON Web Token in your browser | TokenBench"
+  description="Decode a JWT instantly and privately. Reads header, payload and claims, translates exp/iat/nbf into real dates, and flags security problems. Runs entirely in your browser — nothing is uploaded."
+  path="/jwt-decoder"
+  appName="JWT Decoder"
+  faqs={faqs}
+>
+  <h1 class="page-title">JWT Decoder</h1>
+  <p class="lede">
+    Paste a token to read its header, payload and claims. Expired tokens decode too —
+    that's usually why you're here.
+  </p>
+
+  <ProofStrip />
+
+  <Decoder client:load />
+
+  <div class="prose">
+    <h2>What a JWT actually is</h2>
+    <p>
+      A JSON Web Token is three base64url-encoded strings joined by dots:
+      <code>header.payload.signature</code>. The header names the signing algorithm. The
+      payload holds the claims. The signature is a MAC or digital signature over the first
+      two segments.
+    </p>
+    <p>
+      The critical thing to understand — and the source of most JWT security incidents — is
+      that <strong>the first two segments are encoded, not encrypted</strong>. Base64url is
+      not a cipher. Anyone who holds the token can read every claim in it, without any key
+      whatsoever. That is exactly what this page does.
+    </p>
+    <p>
+      So: never put a password, a private key, an internal database ID you'd rather not leak,
+      or anything else sensitive into a JWT payload. The signature guarantees{" "}
+      <em>integrity</em> (nobody altered the claims) and <em>authenticity</em> (someone with
+      the key issued them). It guarantees nothing about <em>confidentiality</em>.
+    </p>
+
+    <h2>Decoding is not validating</h2>
+    <p>
+      These are separate operations, and conflating them is a real vulnerability class. To
+      decode is to read. To validate is to check that the signature matches a key you trust,
+      that the token has not expired, that <code>iss</code> and <code>aud</code> are what you
+      expect, and that the algorithm is one you allow.
+    </p>
+    <p>
+      A decoder that refuses to display an expired or badly-signed token is doing you no
+      favours — it is hiding the evidence you came for. This one always decodes what it can,
+      and reports problems alongside the result rather than instead of it. When you actually
+      need the signature checked, use the{" "}
+      <a href="/jwt-validator">validator</a>.
+    </p>
+
+    <h2>The registered claims, and what they mean</h2>
+    <table>
+      <thead>
+        <tr><th>Claim</th><th>Name</th><th>What it's for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>iss</code></td><td>Issuer</td><td>Who minted the token. Your server should check this against an expected value.</td></tr>
+        <tr><td><code>sub</code></td><td>Subject</td><td>Who the token is about — usually a user ID.</td></tr>
+        <tr><td><code>aud</code></td><td>Audience</td><td>Who is meant to accept it. A token for service A must not be accepted by service B.</td></tr>
+        <tr><td><code>exp</code></td><td>Expiration</td><td>Unix seconds after which the token must be rejected.</td></tr>
+        <tr><td><code>nbf</code></td><td>Not before</td><td>Unix seconds before which it must be rejected.</td></tr>
+        <tr><td><code>iat</code></td><td>Issued at</td><td>When it was minted. Useful for age policies.</td></tr>
+        <tr><td><code>jti</code></td><td>JWT ID</td><td>Unique ID, for replay detection and revocation lists.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      All of them are optional in the spec, which is why this decoder flags a missing{" "}
+      <code>exp</code>: a token with no expiry is valid until the signing key rotates, and a
+      copy that leaks stays useful indefinitely.
+    </p>
+
+    <h2>Decoding a JWT in code</h2>
+    <p>
+      Every snippet below <em>decodes without verifying</em>. That is fine for inspecting a
+      token you already trust, or for reading the <code>kid</code> before you look up a key —
+      and it is a serious bug anywhere else. Never make an authorization decision on an
+      unverified payload.
+    </p>
+
+    <h3>Node.js</h3>
+    <pre class="code"><code>{NODE}</code></pre>
+
+    <h3>Python</h3>
+    <pre class="code"><code>{PYTHON}</code></pre>
+
+    <h3>Go</h3>
+    <pre class="code"><code>{GO}</code></pre>
+
+    <h3>Java</h3>
+    <pre class="code"><code>{JAVA}</code></pre>
+
+    <h2>Why the input is so forgiving</h2>
+    <p>
+      Tokens rarely arrive clean. They come with a <code>Bearer</code> prefix from an
+      Authorization header, wrapped across lines by a terminal, percent-encoded from a query
+      string, or quoted from a JSON log. This decoder strips all of that before parsing, and
+      accepts standard base64 as well as base64url, with or without padding. If it still
+      cannot read your token, it will tell you which of the three segments failed and why —
+      never a blank screen.
+    </p>
+
+    <FaqList faqs={faqs} />
+
+    <ToolLinks current="/jwt-decoder" />
+  </div>
+</Layout>

@@ -1,0 +1,18 @@
+---
+import { REPO_URL } from "../lib/site";
+---
+
+{/*
+  S30: the privacy claim has to be checkable, or it is just marketing. Every
+  incumbent says "don't paste real tokens"; the point of this strip is to tell
+  the reader exactly how to confirm they don't need that warning here.
+*/}
+<div class="proof">
+  <span><b>Runs entirely in your browser.</b></span>
+  <span>
+    Open devtools → Network. Paste a token. Nothing is sent.
+  </span>
+  <span>
+    <a href={REPO_URL}>Read the source</a> · <a href="/privacy">What we measure</a>
+  </span>
+</div>

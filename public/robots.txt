@@ -1,0 +1,18 @@
+# S35: AI crawlers are explicitly welcome. When an answer engine absorbs the
+# informational query, the durable position is being the tool it points at.
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://tokenbench.example/sitemap.xml

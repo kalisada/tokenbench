@@ -1,0 +1,124 @@
+---
+import "../styles/global.css";
+import { SITE, TOOLS, REPO_URL } from "../lib/site";
+
+export interface Faq {
+  q: string;
+  a: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path with leading slash, e.g. "/jwt-decoder". Drives canonical + nav state. */
+  path: string;
+  /** Rendered as FAQPage schema and as the on-page FAQ (S34). */
+  faqs?: Faq[];
+  /** Set on tool pages to emit SoftwareApplication schema (S34). */
+  appName?: string;
+}
+
+const { title, description, path, faqs = [], appName } = Astro.props;
+
+const canonical = new URL(path, Astro.site ?? "https://tokenbench.example").href;
+
+const schemas: unknown[] = [];
+
+if (appName) {
+  schemas.push({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: appName,
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Any (runs in the browser)",
+    url: canonical,
+    description,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    featureList: [
+      "Runs entirely in the browser — tokens are never uploaded",
+      "HS256/384/512, RS256/384/512, PS256/384/512, ES256/384/512, EdDSA",
+      "Security linting: alg:none, weak secrets, missing expiry, algorithm confusion",
+    ],
+  });
+}
+
+if (faqs.length > 0) {
+  schemas.push({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  });
+}
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+
+    {/* S35: AI crawlers are welcome. Being the tool an AI answer points at is
+        the durable position once informational queries stop converting. */}
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+
+    {
+      schemas.map((schema) => (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify(schema)}
+        />
+      ))
+    }
+
+    {/* S32: offline support, which doubles as a privacy proof. */}
+    <script src="/register-sw.js" defer is:inline></script>
+  </head>
+
+  <body>
+    <header class="masthead">
+      <div class="masthead__inner">
+        <a class="wordmark" href="/">token<span>bench</span></a>
+        <nav class="nav" aria-label="Tools">
+          {
+            TOOLS.map((tool) => (
+              <a
+                href={tool.path}
+                aria-current={tool.path === path ? "page" : undefined}
+              >
+                {tool.nav}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main class="shell">
+      <slot />
+    </main>
+
+    <footer class="foot">
+      <div class="shell foot__inner">
+        <span class="badge">↯ works offline</span>
+        <span class="badge">◇ zero network requests</span>
+        <a href={REPO_URL}>Verify the code →</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <span style="margin-left:auto">© {new Date().getFullYear()} {SITE.owner}</span>
+      </div>
+    </footer>
+  </body>
+</html>

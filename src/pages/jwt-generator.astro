@@ -1,0 +1,195 @@
+---
+import Layout, { type Faq } from "../layouts/Layout.astro";
+import Generator from "../components/Generator";
+import ProofStrip from "../components/ProofStrip.astro";
+import ToolLinks from "../components/ToolLinks.astro";
+import FaqList from "../components/Faq.astro";
+
+// Kept out of the markup: Astro reads `{}` in the template as an expression.
+const NODE = `import jwt from 'jsonwebtoken';
+
+const token = jwt.sign(
+  { sub: '1234567890', name: 'Test User' },
+  process.env.JWT_SECRET,          // never a literal
+  { algorithm: 'HS256', expiresIn: '1h' }
+);`;
+
+const PYTHON = `import jwt, os, datetime
+
+token = jwt.encode(
+    {
+        "sub": "1234567890",
+        "name": "Test User",
+        "exp": datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1),
+    },
+    os.environ["JWT_SECRET"],
+    algorithm="HS256",
+)`;
+
+const GO = `import (
+    "os"
+    "time"
+    "github.com/golang-jwt/jwt/v5"
+)
+
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+    "sub": "1234567890",
+    "exp": time.Now().Add(time.Hour).Unix(),
+})
+
+signed, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))`;
+
+const JAVA = `import io.jsonwebtoken.Jwts;
+import java.util.Date;
+
+String token = Jwts.builder()
+    .subject("1234567890")
+    .expiration(new Date(System.currentTimeMillis() + 3_600_000))
+    .signWith(key)   // a javax.crypto.SecretKey, not a String
+    .compact();`;
+
+const faqs: Faq[] = [
+  {
+    q: "Are the tokens and keys generated here safe to use in production?",
+    a: "The tokens, yes, if you signed them with a key you control and trust. The generated key pairs, no. They are produced by your browser's WebCrypto in a tab you found on the internet — perfectly good randomness, but a key's security depends on where it has been, and this one has been in a web page. Use browser-generated key pairs for testing only; generate production keys with openssl or your KMS.",
+  },
+  {
+    q: "Why does this tool let me create an invalid token?",
+    a: "Because you need one. The only way to know your server rejects a tampered token is to send it a tampered token. Any dev can produce one in three lines of code, so refusing to help doesn't prevent anything — it just makes the tool useless for the test you actually need to run. We generate them clearly labelled, with an explanation of what they're for.",
+  },
+  {
+    q: "What is an alg:none token?",
+    a: "A token that declares it has no signature. Historically, JWT libraries that read the algorithm from the token header would accept these as valid — meaning anyone could forge any payload. Your server must reject them outright. Generate one here and fire it at your endpoint; if you get a 200 back, you have found a critical vulnerability.",
+  },
+  {
+    q: "How long should my test token last?",
+    a: "For a test, as short as you can stand — long enough to make the request, no longer. In production, access tokens should be minutes, not days: a token cannot be revoked once issued, so its lifetime is exactly the window an attacker gets from a stolen copy. Use a refresh token for longevity, and keep the access token brief.",
+  },
+];
+---
+
+<Layout
+  title="JWT Generator — create a signed test token online | TokenBench"
+  description="Generate a signed JWT for any algorithm — HS256, RS256, ES256, EdDSA and more. Custom claims, key-pair generation, and deliberately invalid tokens for testing your rejection path. Runs entirely in your browser."
+  path="/jwt-generator"
+  appName="JWT Generator"
+  faqs={faqs}
+>
+  <h1 class="page-title">JWT Generator</h1>
+  <p class="lede">
+    Mint a signed test token in one glance. Edit the claims, pick any algorithm, or
+    deliberately break the signature to test that your server rejects it.
+  </p>
+
+  <ProofStrip />
+
+  <Generator client:load />
+
+  <div class="prose">
+    <h2>Choosing an algorithm</h2>
+    <p>
+      The first decision is symmetric or asymmetric, and it is really a question about who
+      needs to verify.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Family</th><th>Key</th><th>Use it when</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>HS256/384/512</code></td>
+          <td>One shared secret</td>
+          <td>The same service issues and verifies. Simple and fast — but everyone who can verify can also forge.</td>
+        </tr>
+        <tr>
+          <td><code>RS256/384/512</code></td>
+          <td>RSA key pair</td>
+          <td>Others verify your tokens. They get the public key; only you can sign. The default for OIDC providers.</td>
+        </tr>
+        <tr>
+          <td><code>PS256/384/512</code></td>
+          <td>RSA key pair</td>
+          <td>Same as RS, with a modern probabilistic padding scheme (RSA-PSS). Prefer it over RS for new systems.</td>
+        </tr>
+        <tr>
+          <td><code>ES256/384/512</code></td>
+          <td>Elliptic-curve key pair</td>
+          <td>Same trust model as RS, with far smaller keys and signatures. Good for bandwidth-sensitive systems.</td>
+        </tr>
+        <tr>
+          <td><code>EdDSA</code></td>
+          <td>Ed25519 key pair</td>
+          <td>Fast, small, and hard to implement badly. The best default when your whole stack supports it.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      The rule that matters more than the choice: <strong>whichever you pick, pin it on the
+      verifying side</strong>. A server that reads the algorithm out of the token it is
+      verifying is exploitable regardless of which algorithm it was supposed to be using.
+      See the <a href="/jwt-validator#algorithm-confusion">algorithm-confusion</a> explainer.
+    </p>
+
+    <h2>Signing a JWT in code</h2>
+
+    <h3>Node.js (jsonwebtoken)</h3>
+    <pre class="code"><code>{NODE}</code></pre>
+
+    <h3>Python (PyJWT)</h3>
+    <pre class="code"><code>{PYTHON}</code></pre>
+
+    <h3>Go (golang-jwt)</h3>
+    <pre class="code"><code>{GO}</code></pre>
+
+    <h3>Java (jjwt)</h3>
+    <pre class="code"><code>{JAVA}</code></pre>
+
+    <h2>Testing that your server rejects bad tokens</h2>
+    <p>
+      Verifying that the happy path works is the easy half. The half that actually protects
+      you is proving the unhappy paths fail. Every one of these should be rejected, and each
+      is one toggle away on this page:
+    </p>
+    <ul>
+      <li>
+        <strong>A tampered signature.</strong> Flip the toggle above. Your server must return
+        401, not 200. If it returns 200, it isn't verifying at all.
+      </li>
+      <li>
+        <strong>An <code>alg:none</code> token.</strong> Behind the expander above. A 200 here
+        is a critical vulnerability — anyone can mint a token for any user.
+      </li>
+      <li>
+        <strong>An expired token.</strong> Set <code>exp</code> to a past timestamp. Confirm
+        your server checks expiry, and confirm the clock skew you allow is small.
+      </li>
+      <li>
+        <strong>A token with the wrong <code>aud</code>.</strong> A token minted for another
+        service must not be accepted by yours, however impeccable its signature.
+      </li>
+      <li>
+        <strong>A token signed by the wrong key.</strong> Generate a second key pair and sign
+        with it. Rejection should be immediate.
+      </li>
+    </ul>
+    <p>
+      Turn each of these into a test case in your suite. They are cheap to write and they
+      catch the failures that matter.
+    </p>
+
+    <h2>A note on the secrets this page generates</h2>
+    <p>
+      The default HMAC secret is 256 bits from <code>crypto.getRandomValues()</code>, which is
+      a cryptographically secure source. It is fine for testing. For a production secret,
+      generate it where it will live — in your secret manager, or via{" "}
+      <code>openssl rand -base64 32</code> — and never let it pass through a browser, a chat
+      message or a commit. The{" "}
+      <a href="/jwt-secret-key-generator">secret key generator</a> page explains what a good
+      HMAC secret needs to look like.
+    </p>
+
+    <FaqList faqs={faqs} />
+
+    <ToolLinks current="/jwt-generator" />
+  </div>
+</Layout>

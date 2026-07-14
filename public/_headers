@@ -1,0 +1,18 @@
+# Cloudflare Pages headers. S30e: the CSP is part of the privacy guarantee, not
+# just hardening — it is what makes "nothing is exfiltrated" enforceable by the
+# browser rather than merely promised by us.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+
+# connect-src is https: rather than 'none' for exactly one reason: the
+# user-initiated JWKS fetch (S13), whose host we cannot know in advance. No
+# other code path in this site opens a connection.
+#
+# script-src allows 'unsafe-inline' only because the JSON-LD schema blocks are
+# inline <script type="application/ld+json"> elements, which CSP treats as
+# scripts. Sources are still locked to 'self' — nothing third-party can load.

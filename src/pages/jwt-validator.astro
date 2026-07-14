@@ -1,0 +1,169 @@
+---
+import Layout, { type Faq } from "../layouts/Layout.astro";
+import Validator from "../components/Validator";
+import ProofStrip from "../components/ProofStrip.astro";
+import ToolLinks from "../components/ToolLinks.astro";
+import FaqList from "../components/Faq.astro";
+
+// Kept out of the markup: Astro reads `{}` in the template as an expression.
+const VULNERABLE = `// VULNERABLE — never do this.
+const header = JSON.parse(base64url.decode(token.split('.')[0]));
+jwt.verify(token, publicKey, { algorithms: [header.alg] });`;
+
+const CORRECT = `// Correct — the algorithm is your decision, not the token's.
+jwt.verify(token, publicKey, { algorithms: ['RS256'] });`;
+
+const faqs: Faq[] = [
+  {
+    q: "My token is valid but expired — is the signature bad?",
+    a: "No. Those are two separate checks, and this validator reports them as two separate verdicts for exactly that reason. A correctly-signed expired token is the most common real state you will encounter: the signature is fine, the exp claim is in the past. A tool that collapses both into one red 'invalid' hides which of the two actually failed.",
+  },
+  {
+    q: "Why does my secret not work?",
+    a: "Nine times out of ten, encoding. A secret can be the literal text you see, or the base64 decoding of that text into raw bytes — and the two produce completely different keys. Auth0, for example, historically stored base64-encoded secrets. Use the utf-8/base64 toggle; if verification fails with utf-8 and your secret looks base64, this tool will suggest the switch.",
+  },
+  {
+    q: "The JWKS fetch failed with a CORS error. Is your tool broken?",
+    a: "No — the identity provider is simply not sending CORS headers, which is normal and not a bug on their side. JWKS endpoints are designed to be read by servers, not browsers. Because this tool never proxies through a server of ours (that would defeat the privacy guarantee), the browser is blocked. Curl the URL and paste the JSON instead; the tool gives you the exact command.",
+  },
+  {
+    q: "Can I verify an HS256 token with a public key?",
+    a: "You should never want to. If your server does that, it is vulnerable to the algorithm-confusion attack: an attacker takes your public RSA key — which is public — signs a forged token with it as an HMAC secret, flips the header to HS256, and your server validates it. This tool refuses the operation and explains why rather than quietly doing it.",
+  },
+  {
+    q: "Which algorithms are supported?",
+    a: "All of them: HS256/384/512, RS256/384/512, PS256/384/512, ES256/384/512 and EdDSA (Ed25519). Everything runs through the browser's native WebCrypto implementation. EdDSA needs a current browser; if yours lacks it, the tool says so rather than failing mysteriously.",
+  },
+];
+---
+
+<Layout
+  title="JWT Validator — verify a JWT signature online, privately | TokenBench"
+  description="Verify a JWT signature against a secret, PEM public key, JWK or JWKS endpoint. Signature and expiry are reported as separate verdicts. All algorithms supported. Runs entirely in your browser."
+  path="/jwt-validator"
+  appName="JWT Validator"
+  faqs={faqs}
+>
+  <h1 class="page-title">JWT Validator</h1>
+  <p class="lede">
+    Check a token's signature against a secret, a PEM key, a JWK or a JWKS. Signature and
+    expiry are judged separately, because they fail separately.
+  </p>
+
+  <ProofStrip />
+
+  <Validator client:load />
+
+  <div class="prose">
+    <h2>Two verdicts, not one</h2>
+    <p>
+      Most online validators show a single green or red result. That is a mistake, because a
+      JWT can fail in two independent ways and the fix for each is completely different:
+    </p>
+    <ul>
+      <li>
+        <strong>The signature doesn't match.</strong> Either you have the wrong key, the
+        token came from a different environment, or somebody altered it. Nothing about the
+        payload can be trusted.
+      </li>
+      <li>
+        <strong>The signature matches, but the token is expired</strong> (or not yet valid).
+        The token is authentic. It is simply outside its window. Your session ended; go get a
+        new one.
+      </li>
+    </ul>
+    <p>
+      The second case is overwhelmingly the common one in practice, and it is the case a
+      single-verdict tool renders most confusing. This validator always shows both rows.
+    </p>
+
+    <h2>Verifying properly on your server</h2>
+    <p>
+      Checking a signature is necessary but not sufficient. A correct verification does all
+      of the following:
+    </p>
+    <ol>
+      <li>
+        <strong>Pin the algorithm.</strong> Decide which algorithms you accept before you
+        look at the token, and reject anything else. Never let the token's own{" "}
+        <code>alg</code> header choose the verification method — that is how algorithm
+        confusion works.
+      </li>
+      <li><strong>Verify the signature</strong> against a key you already trust.</li>
+      <li><strong>Check <code>exp</code> and <code>nbf</code></strong>, allowing a small clock skew (60 seconds is typical).</li>
+      <li><strong>Check <code>iss</code></strong> equals the issuer you expect.</li>
+      <li>
+        <strong>Check <code>aud</code></strong> contains your service. A token minted for a
+        different audience must not be accepted, even if the signature is perfect.
+      </li>
+    </ol>
+
+    <h2 id="algorithm-confusion">The algorithm-confusion attack</h2>
+    <p>
+      This is the classic JWT vulnerability, and the reason this tool refuses to verify an
+      HMAC token with a public key.
+    </p>
+    <p>
+      Suppose your server issues RS256 tokens. RS256 is asymmetric: you sign with a private
+      key, and anyone can verify with the public key — which, being public, the attacker
+      also has. Now suppose your verification code reads the algorithm out of the token
+      header and dispatches on it, like this:
+    </p>
+    <pre class="code"><code>{VULNERABLE}</code></pre>
+    <p>
+      The attacker forges a payload, sets the header to <code>{'{"alg":"HS256"}'}</code>, and
+      signs it with HMAC-SHA256 using <em>your public key's bytes as the shared secret</em>.
+      Your server dutifully reads <code>alg: HS256</code>, treats the public key as an HMAC
+      secret, computes the same MAC — and the forgery verifies. The attacker has minted a
+      valid token for any user they like, using nothing but public information.
+    </p>
+    <p>The fix is one line, and it is to never trust the header:</p>
+    <pre class="code"><code>{CORRECT}</code></pre>
+    <p>
+      The <code>alg: none</code> attack is the same failure in a simpler costume: the
+      attacker declares there is no signature at all, and a library that trusts the header
+      obliges. Both are prevented by the same rule — <strong>pin the algorithm server-side</strong>.
+      You can mint tokens for both of these cases on the{" "}
+      <a href="/jwt-generator">generator</a> to confirm your server rejects them.
+    </p>
+
+    <h2>Keys, in every form they arrive in</h2>
+    <p>This validator accepts, and auto-detects:</p>
+    <ul>
+      <li><strong>An HMAC secret</strong>, as utf-8 text or base64-encoded bytes.</li>
+      <li><strong>A PEM public key</strong> — both the modern <code>BEGIN PUBLIC KEY</code> (SPKI) form and the older <code>BEGIN RSA PUBLIC KEY</code> (PKCS#1) form.</li>
+      <li><strong>An X.509 certificate</strong> — the public key is extracted from inside it.</li>
+      <li><strong>A bare JWK</strong>, the JSON form.</li>
+      <li><strong>A full JWKS</strong>, in which case the key whose <code>kid</code> matches the token's header is selected. If none matches, every key is tried and the tool reports which one worked.</li>
+    </ul>
+    <p>
+      Carriage returns, indentation and stray whitespace are all tolerated. If you paste an
+      EC key for an RS256 token, the error names that mismatch specifically rather than
+      saying "invalid key".
+    </p>
+
+    <h2>Why JWKS fetching so often fails in a browser</h2>
+    <p>
+      A JWKS endpoint publishes the public keys an issuer signs with, so verifiers can look
+      up a key by <code>kid</code> and rotate keys without redeploying. Fetching one from a
+      web page usually fails, and it is worth being precise about why.
+    </p>
+    <p>
+      JWKS endpoints are consumed by servers. Almost none of them send an{" "}
+      <code>Access-Control-Allow-Origin</code> header, so the browser's same-origin policy
+      blocks a page like this one from reading the response. That is the browser working
+      correctly, not the provider misconfiguring anything.
+    </p>
+    <p>
+      Other tools work around this by proxying the request through their own backend. We
+      don't, on purpose: the moment a server of ours sits in the middle, "your token never
+      leaves your browser" stops being true, and the entire premise of this site collapses.
+      So when CORS blocks the fetch, we hand you the <code>curl</code> command and take the
+      JSON by paste instead. It is one extra step, and it keeps the guarantee intact.
+    </p>
+
+    <FaqList faqs={faqs} />
+
+    <ToolLinks current="/jwt-validator" />
+  </div>
+</Layout>

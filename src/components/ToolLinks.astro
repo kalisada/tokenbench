@@ -1,0 +1,23 @@
+---
+import { otherTools } from "../lib/site";
+
+interface Props {
+  current: string;
+}
+
+const { current } = Astro.props;
+const tools = otherTools(current);
+---
+
+{/* S34: dense internal linking — every tool page reaches every other one. */}
+<h2>The rest of the workbench</h2>
+<div class="grid-3">
+  {
+    tools.map((tool) => (
+      <a class="card" href={tool.path}>
+        <h3>{tool.title}</h3>
+        <p>{tool.blurb}</p>
+      </a>
+    ))
+  }
+</div>

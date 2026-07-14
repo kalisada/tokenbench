@@ -1,0 +1,111 @@
+---
+import Layout, { type Faq } from "../layouts/Layout.astro";
+import Decoder from "../components/Decoder";
+import ProofStrip from "../components/ProofStrip.astro";
+import { TOOLS, REPO_URL } from "../lib/site";
+
+const faqs: Faq[] = [
+  {
+    q: "Is it safe to paste a real token into TokenBench?",
+    a: "Yes, and the claim is checkable rather than asked-for-on-faith. Every tool runs entirely in your browser using the native WebCrypto API. Open devtools, switch to the Network tab, and paste a token: no request is made. The source is public, and the site works with your network disconnected.",
+  },
+  {
+    q: "How is this different from jwt.io?",
+    a: "jwt.io is a decoder first, and it tells you not to paste tokens you care about. TokenBench covers the whole job — decode, validate, generate, and generate secrets — supports every JOSE algorithm rather than a subset, runs a security lint on anything you paste, and is built so that the privacy claim can be verified rather than trusted.",
+  },
+  {
+    q: "Does TokenBench store anything?",
+    a: "No. Nothing you paste is written to localStorage, sessionStorage, IndexedDB or a cookie, and nothing is sent to a server. Refreshing the page gives you a clean slate. We count anonymous page and tool usage — never content — and the privacy page lists exactly what that includes.",
+  },
+];
+---
+
+<Layout
+  title="TokenBench — JWT decoder, validator, generator and secret keys, all client-side"
+  description="A complete JWT workbench that runs entirely in your browser. Decode, validate, generate and lint JSON Web Tokens across every algorithm. Your tokens are never uploaded — and you can prove it."
+  path="/"
+  appName="TokenBench JWT Workbench"
+  faqs={faqs}
+>
+  <h1 class="page-title">The JWT workbench that never sees your tokens</h1>
+  <p class="lede">
+    Decode, verify, generate and lint JSON Web Tokens — every algorithm, one page each,
+    entirely in your browser. Paste the real token; that's the point.
+  </p>
+
+  <ProofStrip />
+
+  <Decoder client:load />
+
+  <div class="prose" style="max-width:none">
+    <h2>Every tool in the workbench</h2>
+    <div class="grid-2">
+      {
+        TOOLS.map((tool) => (
+          <a class="card" href={tool.path}>
+            <h3>{tool.title}</h3>
+            <p>{tool.blurb}</p>
+          </a>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="prose">
+    <h2>Why "don't paste real tokens" is the wrong advice</h2>
+    <p>
+      Almost every JWT tool on the web carries some version of that warning, and they are
+      right to — a token pasted into a page that posts it to a server is a credential you
+      have handed to a stranger. But the warning is useless, because the tokens you need to
+      debug <em>are</em> the real ones. Nobody opens a decoder to look at a token they made
+      up.
+    </p>
+    <p>
+      So the warning gets ignored, and real session tokens end up in strangers' server logs.
+      The answer is not a sterner warning. It is a tool that does not need one — and that
+      lets you confirm it, rather than asking you to trust it.
+    </p>
+    <p>Concretely, that means:</p>
+    <ul>
+      <li>
+        <strong>No network requests.</strong> After the page loads, nothing is sent. Watch
+        the Network tab while you paste. The one exception is fetching a JWKS from a URL you
+        typed, on a button you clicked — and even then, the token itself is never part of the
+        request.
+      </li>
+      <li>
+        <strong>No storage.</strong> Nothing you paste touches localStorage, sessionStorage,
+        IndexedDB or a cookie. Refresh, and it is gone.
+      </li>
+      <li>
+        <strong>No third-party scripts near your inputs.</strong> Ads, when there are any,
+        are sandboxed in iframes that cannot read the page. Analytics counts events, never
+        content.
+      </li>
+      <li>
+        <strong><a href={REPO_URL}>Readable source</a>.</strong> The whole thing is a handful
+        of TypeScript files calling WebCrypto. Go and check that the claims above are true.
+      </li>
+      <li>
+        <strong>Works offline.</strong> Load the site once, kill your connection, and every
+        tool still works. A page that functions with the network unplugged cannot be
+        exfiltrating anything.
+      </li>
+    </ul>
+
+    <h2>Completeness, because the gaps are where the bugs are</h2>
+    <p>
+      The other reason this exists: most JWT tools do part of the job. One decodes but cannot
+      verify. One supports RSA but not elliptic curve. One verifies but cannot show you why
+      an expired token still has a perfectly good signature. So you end up using three of
+      them, pasting the same token into each.
+    </p>
+    <p>
+      TokenBench supports the full JOSE algorithm set — HS256/384/512, RS256/384/512,
+      PS256/384/512, ES256/384/512 and EdDSA — accepts keys as PEM, JWK, JWKS or raw secret,
+      and runs the same security lint everywhere. If a token has <code>alg:none</code>, a
+      well-known default secret, no expiry, or a lifetime measured in months, you will be told
+      — whichever page you are on.
+    </p>
+  </div>
+</Layout>

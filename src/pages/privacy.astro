@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SITE, REPO_URL } from "../lib/site";
+---
+
+<Layout
+  title="Privacy — what TokenBench does and does not collect"
+  description="TokenBench processes tokens entirely in your browser. Nothing you paste is transmitted or stored. This page lists exactly what is measured, and what never is."
+  path="/privacy"
+>
+  <h1 class="page-title">Privacy</h1>
+  <p class="lede">
+    Short version: your tokens, secrets and keys never leave your browser. This page is the
+    long version, including the anonymous usage counts we do collect.
+  </p>
+
+  <div class="prose">
+    <h2>What happens to a token you paste</h2>
+    <p>
+      It is decoded, verified or signed by JavaScript running in your browser tab, using the
+      browser's built-in WebCrypto API. It is not sent anywhere. It is not stored anywhere.
+      When you close or refresh the tab, it is gone.
+    </p>
+    <p>
+      You do not have to take that on trust, which is the entire design goal. Open your
+      browser's developer tools, switch to the Network tab, and paste a token into any tool
+      on this site. You will see no request. Disconnect from the internet entirely and reload:
+      every tool still works, because there is no server to talk to.
+    </p>
+    <p>
+      The <a href={REPO_URL}>source is public</a>. It is a small amount of TypeScript, and it
+      is worth ten minutes of your time if you are about to paste a production token into it.
+    </p>
+
+    <h2>Specifically, we never receive</h2>
+    <ul>
+      <li>Tokens, or any part of a token — header, payload, signature.</li>
+      <li>Secrets, private keys, public keys, or JWKS content.</li>
+      <li>Claim names or claim values from your tokens.</li>
+      <li>JWKS URLs that you type.</li>
+      <li>Anything you type into any field on this site.</li>
+    </ul>
+    <p>
+      This is not a policy commitment that could quietly change — it is a property of how the
+      site is built. There is no endpoint that accepts this data.
+    </p>
+
+    <h2>The one network request</h2>
+    <p>
+      The validator can fetch a JWKS from a URL you supply. That happens only when you click
+      "Fetch JWKS", and the request goes directly from your browser to the server you named.
+      It does not pass through us, and your token is not part of it — a JWKS fetch asks only
+      for public keys.
+    </p>
+    <p>
+      In practice this request is usually blocked by the browser's CORS policy, because
+      identity providers do not expect browsers to read their JWKS endpoints. When that
+      happens we hand you a <code>curl</code> command instead. We deliberately do not offer a
+      server-side proxy to work around it: routing your traffic through our infrastructure is
+      precisely the thing this site exists not to do.
+    </p>
+
+    <h2>What we do measure</h2>
+    <p>
+      We count usage in aggregate, so we know which tools are worth improving and can describe
+      the audience to potential sponsors. The measurement is privacy-preserving analytics with
+      no cookies and no cross-site tracking, and it records only:
+    </p>
+    <ul>
+      <li>Page views, referrer, and coarse country — the standard, cookieless kind.</li>
+      <li>Which tool was used, as a counter. Not what it was used on.</li>
+      <li>Which lint categories fired — e.g. that an <code>alg:none</code> warning was shown. Never the token that triggered it.</li>
+      <li>Whether a JWKS fetch was attempted, and whether it failed on CORS. Never the URL.</li>
+      <li>The algorithm name from a token header — the string <code>"RS256"</code>, nothing else from the token.</li>
+      <li>That a copy button was pressed. Not what was copied.</li>
+    </ul>
+    <p>
+      Every one of those is an event name and a count. None of them can carry the content of
+      anything you paste, because the content is never passed to the analytics call in the
+      first place — you can confirm that in the source.
+    </p>
+
+    <h2>Storage and cookies</h2>
+    <p>
+      This site sets no cookies. It writes nothing to localStorage, sessionStorage or
+      IndexedDB. A service worker caches the site's own code so the tools work offline; it
+      never caches or stores anything you enter.
+    </p>
+
+    <h2>Advertising</h2>
+    <p>
+      If and when this site carries ads, they will be developer-focused, served in sandboxed
+      iframes that cannot read the page's DOM, and never placed adjacent to an input field.
+      We will not use ad technology that scans page content or targets on the basis of what
+      you type, for the obvious reason that the inputs on this site contain credentials.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions, or a security issue to report: open an issue on{" "}
+      <a href={REPO_URL}>the repository</a>.
+    </p>
+
+    <p style="margin-top:32px"><em>{SITE.owner}. Last updated July 2026.</em></p>
+  </div>
+</Layout>
