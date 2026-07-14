@@ -23,8 +23,19 @@ The build spec's scenarios (S1–S35) are the requirements, so they are also the
 each test is named for the scenario it covers.
 
 ```sh
-npm test             # 78 unit tests: crypto, key parsing, decoding, lints
-npm run test:e2e     # 23 browser checks against the built site
+npm test             # 85 unit tests: crypto, key parsing, decoding, lints, analytics
+npm run test:e2e     # 28 browser checks against the built site
+```
+
+The mobile performance gate (S32 requires ≥95) is run on demand. Lighthouse is
+deliberately **not** a dependency — it pulls in a Sentry/OpenTelemetry chain that
+accounted for every `npm audit` finding in this repo. None could reach a visitor, but on
+a site whose pitch is "audit us", a noisy audit is a real cost. `npm audit` reports zero
+vulnerabilities, and it should stay that way.
+
+```sh
+npm run build
+npm i --no-save lighthouse && node scripts/lighthouse.mjs
 ```
 
 The unit suite covers the parts most likely to be quietly wrong: base64url tolerance,

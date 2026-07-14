@@ -7,10 +7,9 @@
       "vitest/globals",
       "@cloudflare/workers-types"
     ],
-    "baseUrl": ".",
     "paths": {
       "@lib/*": [
-        "src/lib/*"
+        "./src/lib/*"
       ]
     }
   },

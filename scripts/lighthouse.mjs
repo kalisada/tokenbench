@@ -5,10 +5,32 @@
  *
  * Run: node scripts/lighthouse.mjs   (expects `astro build` first)
  */
-import lighthouse from "lighthouse";
-import { launch } from "chrome-launcher";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
+
+/*
+ * Lighthouse is intentionally NOT a dependency of this project.
+ *
+ * It pulls in a Sentry/OpenTelemetry chain that accounted for every single
+ * `npm audit` finding here — 17 moderate advisories, none of which could ever
+ * reach a visitor, all of which would be installed on every Cloudflare build and
+ * printed in every build log. On a site whose whole pitch is "audit us", a noisy
+ * audit is a real cost. It is a measurement tool, not part of the product, so it
+ * is installed on demand instead.
+ */
+let lighthouse, launch;
+try {
+  ({ default: lighthouse } = await import("lighthouse"));
+  ({ launch } = await import("chrome-launcher"));
+} catch {
+  console.error(
+    "Lighthouse is not installed (deliberately — see the comment in this file).\n" +
+      "To run the performance gate:\n\n" +
+      "  npm i --no-save lighthouse\n" +
+      "  node scripts/lighthouse.mjs\n",
+  );
+  process.exit(1);
+}
 
 const BASE = "http://localhost:4321";
 const PAGES = [
