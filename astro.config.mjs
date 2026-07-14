@@ -3,9 +3,8 @@ import preact from "@astrojs/preact";
 
 export default defineConfig({
   integrations: [preact()],
-  // Domain is not purchased yet (spec: buy at build time). Set before launch —
-  // sitemap/canonical generation depends on it.
-  site: "https://tokenbench.example",
+  // Drives canonical URLs and the sitemap.
+  site: "https://tokenbench.dev",
   build: {
     inlineStylesheets: "auto",
   },

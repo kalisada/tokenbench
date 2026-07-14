@@ -51,9 +51,10 @@ It drives the system Chrome; override with `CHROME_PATH` if yours lives elsewher
 
 ## Before launch
 
-- [ ] Buy the domain, then set `site` in `astro.config.mjs` and the `Sitemap:` line in
-      `public/robots.txt`. Both currently point at `tokenbench.example`.
-- [ ] Set `REPO_URL` in `src/lib/site.ts` to the real repository.
+Live at **tokenbench.dev**.
+
+- [ ] Set `REPO_URL` in `src/lib/site.ts` to the real repository. The footer's "Verify
+      the code" link is load-bearing — the privacy claim is only checkable if it resolves.
 - [ ] Wire up privacy-preserving analytics (counters only — the privacy page already
       documents exactly what may and may not be recorded; keep it honest).
 - [ ] Re-verify the SERP for "jwt validator" before committing further effort.

@@ -4,7 +4,7 @@ import { TOOLS } from "../lib/site";
 const PATHS = ["/", ...TOOLS.map((tool) => tool.path), "/privacy", "/terms"];
 
 export const GET: APIRoute = ({ site }) => {
-  const origin = (site ?? new URL("https://tokenbench.example")).origin;
+  const origin = (site ?? new URL("https://tokenbench.dev")).origin;
   const today = new Date().toISOString().slice(0, 10);
 
   const urls = PATHS.map(

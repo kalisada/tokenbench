@@ -3,8 +3,7 @@
 export const SITE = {
   name: "TokenBench",
   owner: "Kalisada LLC",
-  /** Placeholder until the domain is bought — the spec defers that to build time. */
-  domain: "tokenbench.example",
+  domain: "tokenbench.dev",
 } as const;
 
 /** S30b: the privacy claim is only credible if the code is readable. */

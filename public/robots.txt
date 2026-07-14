@@ -15,4 +15,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://tokenbench.example/sitemap.xml
+Sitemap: https://tokenbench.dev/sitemap.xml

@@ -20,7 +20,13 @@ interface Props {
 
 const { title, description, path, faqs = [], appName } = Astro.props;
 
-const canonical = new URL(path, Astro.site ?? "https://tokenbench.example").href;
+// No fallback origin on purpose: a silent default is how a site ends up shipping
+// canonicals pointing at the wrong host. If `site` is unset, fail the build.
+if (!Astro.site) {
+  throw new Error("`site` must be set in astro.config.mjs — canonical URLs depend on it.");
+}
+
+const canonical = new URL(path, Astro.site).href;
 
 const schemas: unknown[] = [];
 
