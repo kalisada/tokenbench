@@ -54,58 +54,36 @@ const faqs: Faq[] = [
   <div class="prose">
     <h2>Why "don't paste real tokens" is the wrong advice</h2>
     <p>
-      Almost every JWT tool on the web carries some version of that warning, and they are
-      right to — a token pasted into a page that posts it to a server is a credential you
-      have handed to a stranger. But the warning is useless, because the tokens you need to
-      debug <em>are</em> the real ones. Nobody opens a decoder to look at a token they made
-      up.
+      Every JWT tool carries some version of that warning, and they're right to — a token
+      pasted into a page that ships it to a server is a credential handed to a stranger. But
+      the warning is useless: the tokens you need to debug <em>are</em> the real ones, so it
+      gets ignored, and real session tokens end up in strangers' logs. The fix isn't a
+      sterner warning. It's a tool that doesn't need one — and that lets you verify the claim
+      rather than trust it:
     </p>
-    <p>
-      So the warning gets ignored, and real session tokens end up in strangers' server logs.
-      The answer is not a sterner warning. It is a tool that does not need one — and that
-      lets you confirm it, rather than asking you to trust it.
-    </p>
-    <p>Concretely, that means:</p>
     <ul>
       <li>
-        <strong>No network requests.</strong> After the page loads, nothing is sent. Watch
-        the Network tab while you paste. The one exception is fetching a JWKS from a URL you
-        typed, on a button you clicked — and even then, the token itself is never part of the
-        request.
+        <strong>No network requests.</strong> After load, nothing is sent — watch the
+        Network tab while you paste. The one exception is a JWKS fetch you trigger by button,
+        and even then the token is never part of the request.
       </li>
       <li>
         <strong>No storage.</strong> Nothing you paste touches localStorage, sessionStorage,
-        IndexedDB or a cookie. Refresh, and it is gone.
+        IndexedDB or a cookie. Refresh, and it's gone.
       </li>
       <li>
-        <strong>No third-party scripts near your inputs.</strong> Ads, when there are any,
-        are sandboxed in iframes that cannot read the page. Analytics counts events, never
-        content.
+        <strong><a href={REPO_URL}>Readable source</a>.</strong> A handful of TypeScript files
+        calling WebCrypto. Go and check the claims above are true.
       </li>
       <li>
-        <strong><a href={REPO_URL}>Readable source</a>.</strong> The whole thing is a handful
-        of TypeScript files calling WebCrypto. Go and check that the claims above are true.
-      </li>
-      <li>
-        <strong>Works offline.</strong> Load the site once, kill your connection, and every
-        tool still works. A page that functions with the network unplugged cannot be
-        exfiltrating anything.
+        <strong>Works offline.</strong> Load once, pull the plug, and every tool still works.
+        A page that runs with the network unplugged can't be exfiltrating anything.
       </li>
     </ul>
-
-    <h2>Completeness, because the gaps are where the bugs are</h2>
     <p>
-      The other reason this exists: most JWT tools do part of the job. One decodes but cannot
-      verify. One supports RSA but not elliptic curve. One verifies but cannot show you why
-      an expired token still has a perfectly good signature. So you end up using three of
-      them, pasting the same token into each.
-    </p>
-    <p>
-      TokenBench supports the full JOSE algorithm set — HS256/384/512, RS256/384/512,
-      PS256/384/512, ES256/384/512 and EdDSA — accepts keys as PEM, JWK, JWKS or raw secret,
-      and runs the same security lint everywhere. If a token has <code>alg:none</code>, a
-      well-known default secret, no expiry, or a lifetime measured in months, you will be told
-      — whichever page you are on.
+      And it's the whole job in one place: every JOSE algorithm (HS, RS, PS, ES, EdDSA), keys
+      as PEM, JWK, JWKS or raw secret, and the same security lint on every page — so you're
+      not pasting one token into three tools that each do part of it.
     </p>
   </div>
 </Layout>
