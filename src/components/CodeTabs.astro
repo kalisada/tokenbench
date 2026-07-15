@@ -1,0 +1,61 @@
+---
+/**
+ * Tabbed code samples, implemented in pure CSS — no JavaScript, no hydration.
+ *
+ * Every panel is real HTML present at load, hidden with CSS. That is the whole
+ * point for SEO: Google indexes all four language snippets normally (S34's
+ * per-language code blocks are link magnets), while a reader sees only the one
+ * language they came for. Collapsing is not removing.
+ *
+ * Radios drive the state via :checked; they are siblings of both the label row
+ * and the panels, so the :nth-of-type rules in global.css can light up the
+ * matching pair. Native radio semantics also give arrow-key navigation for free.
+ */
+
+interface Tab {
+  label: string;
+  code: string;
+}
+
+interface Props {
+  /** Unique per tab group on the page — namespaces the radio inputs. */
+  group: string;
+  tabs: Tab[];
+}
+
+const { group, tabs } = Astro.props;
+---
+
+<div class="tabs">
+  {
+    tabs.map((tab, i) => (
+      <input
+        type="radio"
+        name={group}
+        id={`${group}-${i}`}
+        class="tabs__radio"
+        checked={i === 0}
+      />
+    ))
+  }
+
+  {/* A native radio group — labels associate by `for`, and the group is
+      announced correctly without ARIA. A `role="tablist"` here would be an
+      accessibility *regression*: it requires role="tab" children, which radios
+      are not. Let the native semantics do the work. */}
+  <div class="tabs__labels">
+    {
+      tabs.map((tab, i) => (
+        <label for={`${group}-${i}`}>{tab.label}</label>
+      ))
+    }
+  </div>
+
+  <div class="tabs__panels">
+    {
+      tabs.map((tab) => (
+        <pre class="code tabs__panel"><code>{tab.code}</code></pre>
+      ))
+    }
+  </div>
+</div>

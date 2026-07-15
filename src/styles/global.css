@@ -29,8 +29,13 @@
     Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --radius: 6px;
+  --radius: 8px;
   --measure: 68ch;
+
+  /* A hair of elevation so panels read as deliberate objects, not outlined
+     boxes. Kept subtle — this is an instrument, not a marketing page. */
+  --shadow: 0 1px 2px rgba(24, 26, 30, 0.04), 0 1px 3px rgba(24, 26, 30, 0.03);
+  --shadow-lift: 0 6px 16px rgba(24, 26, 30, 0.08), 0 2px 4px rgba(24, 26, 30, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -55,6 +60,13 @@
     --green-bg: #16281c;
     --info: #8fb8e0;
     --info-bg: #1a222c;
+
+    /* Deeper in dark mode: a panel one step lighter than the page needs a real
+       shadow plus a faint top highlight to read as raised rather than flat. */
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    --shadow-lift: 0 10px 28px rgba(0, 0, 0, 0.4), 0 3px 8px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 }
 
@@ -149,21 +161,26 @@ pre {
   color: var(--accent-ink);
 }
 
-main {
-  padding: 32px 0 64px;
+/* main also carries .shell, whose `padding: 0 20px` would otherwise win on
+   specificity and zero out the vertical space. Set both here. */
+main.shell {
+  padding: 72px 20px 96px;
 }
 
 .page-title {
-  font-size: 1.9rem;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  margin: 0 0 6px;
+  font-size: clamp(2.1rem, 4.5vw, 2.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.033em;
+  margin: 0 0 14px;
+  max-width: 20ch;
 }
 
 .lede {
-  margin: 0 0 24px;
+  margin: 0 0 32px;
+  font-size: 1.08rem;
+  line-height: 1.55;
   color: var(--ink-soft);
-  max-width: var(--measure);
+  max-width: 56ch;
 }
 
 /* --- panels --------------------------------------------------------------- */
@@ -172,7 +189,8 @@ main {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
 }
 
 .panel + .panel {
@@ -265,10 +283,19 @@ button {
   background: var(--panel-alt);
   color: var(--ink);
   cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 button:hover {
   border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 button.primary {
@@ -507,23 +534,118 @@ table.claims tr:last-child td {
   margin-top: 2px;
 }
 
+/* --- CSS-only code tabs ---------------------------------------------------- */
+
+/*
+ * Pure CSS, no JavaScript. The radios are hidden but focusable; native radio
+ * semantics give arrow-key navigation between languages for free. Every panel
+ * is in the DOM at load and merely hidden, so all four language samples are
+ * indexed (S34) while the reader sees one. The :nth-of-type pairs light up the
+ * active label and panel; four is all we use.
+ */
+
+.tabs {
+  margin: 12px 0 4px;
+}
+
+.tabs__radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tabs__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.tabs__labels label {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-alt);
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.tabs__labels label:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.tabs__panel {
+  display: none;
+  margin: 0;
+}
+
+.tabs__radio:nth-of-type(1):checked ~ .tabs__panels > .tabs__panel:nth-of-type(1),
+.tabs__radio:nth-of-type(2):checked ~ .tabs__panels > .tabs__panel:nth-of-type(2),
+.tabs__radio:nth-of-type(3):checked ~ .tabs__panels > .tabs__panel:nth-of-type(3),
+.tabs__radio:nth-of-type(4):checked ~ .tabs__panels > .tabs__panel:nth-of-type(4) {
+  display: block;
+}
+
+.tabs__radio:nth-of-type(1):checked ~ .tabs__labels > label:nth-of-type(1),
+.tabs__radio:nth-of-type(2):checked ~ .tabs__labels > label:nth-of-type(2),
+.tabs__radio:nth-of-type(3):checked ~ .tabs__labels > label:nth-of-type(3),
+.tabs__radio:nth-of-type(4):checked ~ .tabs__labels > label:nth-of-type(4) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* Keyboard focus lands on the hidden radio; mirror it onto the visible label. */
+.tabs__radio:nth-of-type(1):focus-visible ~ .tabs__labels > label:nth-of-type(1),
+.tabs__radio:nth-of-type(2):focus-visible ~ .tabs__labels > label:nth-of-type(2),
+.tabs__radio:nth-of-type(3):focus-visible ~ .tabs__labels > label:nth-of-type(3),
+.tabs__radio:nth-of-type(4):focus-visible ~ .tabs__labels > label:nth-of-type(4) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* --- prose ---------------------------------------------------------------- */
 
 .prose {
   max-width: var(--measure);
-  margin-top: 56px;
+  margin-top: 72px;
 }
 
+/* Section breaks read as distinct beats: a hairline rule and generous space,
+   so the long-form SEO content scans as chapters rather than one slab. */
 .prose h2 {
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
-  margin: 40px 0 12px;
-  padding-top: 8px;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  margin: 64px 0 14px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+/* The first section sits directly under the tool, so it needs neither. */
+.prose > h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .prose h3 {
   font-size: 1.05rem;
-  margin: 28px 0 8px;
+  margin: 32px 0 8px;
+}
+
+.prose p + p {
+  margin-top: 14px;
 }
 
 .prose p,
@@ -595,16 +717,23 @@ details.faq > *:not(summary) {
 
 .card {
   display: block;
-  padding: 16px;
+  padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
+  box-shadow: var(--shadow);
   text-decoration: none;
   color: inherit;
+  transition:
+    border-color 0.14s ease,
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
 }
 
 .card:hover {
   border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
 }
 
 .card h3 {

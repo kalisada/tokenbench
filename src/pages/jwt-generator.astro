@@ -3,6 +3,7 @@ import Layout, { type Faq } from "../layouts/Layout.astro";
 import Generator from "../components/Generator";
 import ProofStrip from "../components/ProofStrip.astro";
 import ToolLinks from "../components/ToolLinks.astro";
+import CodeTabs from "../components/CodeTabs.astro";
 import FaqList from "../components/Faq.astro";
 
 // Kept out of the markup: Astro reads `{}` in the template as an expression.
@@ -132,17 +133,15 @@ const faqs: Faq[] = [
 
     <h2>Signing a JWT in code</h2>
 
-    <h3>Node.js (jsonwebtoken)</h3>
-    <pre class="code"><code>{NODE}</code></pre>
-
-    <h3>Python (PyJWT)</h3>
-    <pre class="code"><code>{PYTHON}</code></pre>
-
-    <h3>Go (golang-jwt)</h3>
-    <pre class="code"><code>{GO}</code></pre>
-
-    <h3>Java (jjwt)</h3>
-    <pre class="code"><code>{JAVA}</code></pre>
+    <CodeTabs
+      group="sign-code"
+      tabs={[
+        { label: "Node.js", code: NODE },
+        { label: "Python", code: PYTHON },
+        { label: "Go", code: GO },
+        { label: "Java", code: JAVA },
+      ]}
+    />
 
     <h2>Testing that your server rejects bad tokens</h2>
     <p>

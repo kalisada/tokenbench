@@ -3,6 +3,7 @@ import Layout, { type Faq } from "../layouts/Layout.astro";
 import Decoder from "../components/Decoder";
 import ProofStrip from "../components/ProofStrip.astro";
 import ToolLinks from "../components/ToolLinks.astro";
+import CodeTabs from "../components/CodeTabs.astro";
 import FaqList from "../components/Faq.astro";
 
 // Code samples live here rather than inline: Astro parses `{}` in markup as
@@ -158,17 +159,15 @@ const faqs: Faq[] = [
       unverified payload.
     </p>
 
-    <h3>Node.js</h3>
-    <pre class="code"><code>{NODE}</code></pre>
-
-    <h3>Python</h3>
-    <pre class="code"><code>{PYTHON}</code></pre>
-
-    <h3>Go</h3>
-    <pre class="code"><code>{GO}</code></pre>
-
-    <h3>Java</h3>
-    <pre class="code"><code>{JAVA}</code></pre>
+    <CodeTabs
+      group="decode-code"
+      tabs={[
+        { label: "Node.js", code: NODE },
+        { label: "Python", code: PYTHON },
+        { label: "Go", code: GO },
+        { label: "Java", code: JAVA },
+      ]}
+    />
 
     <h2>Why the input is so forgiving</h2>
     <p>
