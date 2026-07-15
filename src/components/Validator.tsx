@@ -142,7 +142,7 @@ export default function Validator(): JSX.Element {
   return (
     <div>
       <div class="grid-2">
-        <div class="panel">
+        <div class="panel panel--grow">
           <label for="token">Token</label>
           <textarea
             id="token"
