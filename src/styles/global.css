@@ -197,17 +197,42 @@ main.shell {
   margin-top: 16px;
 }
 
-/* In a two-up grid the panels stretch to equal height; this lets the panel's
-   textarea grow into that height so both input boxes bottom-align and no dead
-   space opens up beneath the shorter one. A taller token box is a bonus —
-   tokens are long. */
-.panel--grow {
-  display: flex;
-  flex-direction: column;
+/* Two-up input grid (validator): top-align the panels and give both boxes the
+   same fixed height, so their tops line up in every mode — flex-grow inside a
+   stretched grid cell sized the two panels inconsistently, so this is done
+   deterministically instead. */
+.io-grid {
+  align-items: start;
 }
 
-.panel--grow .token-input {
-  flex: 1;
+/* The two input panels are adjacent siblings, so `.panel + .panel` (meant for
+   stacked panels) was giving the second one a 16px top margin and pushing its
+   box down. They sit in separate grid columns — no stacking margin wanted. */
+.io-grid > .panel + .panel {
+  margin-top: 0;
+}
+
+/* A fixed-height header row so two side-by-side input panels line their boxes
+   up, even when one side carries mode toggles the other doesn't. Label sits
+   left; controls collect on the right and wrap below on narrow screens. */
+.io-head {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  min-height: 36px;
+  margin-bottom: 10px;
+}
+
+.io-head > label {
+  margin: 0;
+}
+
+.io-head__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .panel__title {
@@ -284,7 +309,9 @@ button:focus-visible {
 
 .token-input {
   word-break: break-all;
-  min-height: 132px;
+  /* Both the token box and the key box use this, so a shared fixed height is
+     what makes the two side-by-side boxes the same size. */
+  min-height: 176px;
 }
 
 button {

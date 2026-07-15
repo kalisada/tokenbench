@@ -141,9 +141,11 @@ export default function Validator(): JSX.Element {
 
   return (
     <div>
-      <div class="grid-2">
-        <div class="panel panel--grow">
-          <label for="token">Token</label>
+      <div class="grid-2 io-grid">
+        <div class="panel">
+          <div class="io-head">
+            <label for="token">Token</label>
+          </div>
           <textarea
             id="token"
             class="token-input"
@@ -153,59 +155,70 @@ export default function Validator(): JSX.Element {
             value={token}
             onInput={(event) => setToken(event.currentTarget.value)}
           />
-          {alg && (
-            <p class="hint">
-              Header declares <code>{alg}</code>
-              {isHmac ? " — a shared secret" : " — a public/private key pair"}.
-            </p>
-          )}
+          {/* Always render a hint so this panel's footer matches the key
+              panel's, keeping the two boxes the same height. */}
+          <p class="hint">
+            {alg ? (
+              <>
+                Header declares <code>{alg}</code>
+                {isHmac ? " — a shared secret" : " — a public/private key pair"}.
+              </>
+            ) : (
+              "Paste a signed JWT. Expired or unsigned tokens are fine."
+            )}
+          </p>
         </div>
 
         <div class="panel">
-          <div class="btn-row" style="margin-bottom:10px">
-            <div class="segmented">
-              <button
-                type="button"
-                aria-pressed={source === "paste"}
-                onClick={() => setSource("paste")}
-              >
-                Paste key
-              </button>
-              <button
-                type="button"
-                aria-pressed={source === "jwks-url"}
-                onClick={() => setSource("jwks-url")}
-              >
-                JWKS URL
-              </button>
-            </div>
+          {/* Label and every toggle share one header row so this box's top
+              lines up with the token box's top. */}
+          <div class="io-head">
+            {source === "paste" && (
+              <label for="key">{isHmac ? "HMAC secret" : "Public key"}</label>
+            )}
 
-            {/* S10: raw text and base64-encoded bytes are both common. */}
-            {isHmac && source === "paste" && (
-              <div class="segmented" style="margin-left:auto">
+            <div class="io-head__controls">
+              {/* S10: raw text and base64-encoded bytes are both common. */}
+              {isHmac && source === "paste" && (
+                <div class="segmented">
+                  <button
+                    type="button"
+                    aria-pressed={encoding === "utf-8"}
+                    onClick={() => setEncoding("utf-8")}
+                  >
+                    utf-8
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={encoding === "base64"}
+                    onClick={() => setEncoding("base64")}
+                  >
+                    base64
+                  </button>
+                </div>
+              )}
+
+              <div class="segmented">
                 <button
                   type="button"
-                  aria-pressed={encoding === "utf-8"}
-                  onClick={() => setEncoding("utf-8")}
+                  aria-pressed={source === "paste"}
+                  onClick={() => setSource("paste")}
                 >
-                  utf-8
+                  Paste key
                 </button>
                 <button
                   type="button"
-                  aria-pressed={encoding === "base64"}
-                  onClick={() => setEncoding("base64")}
+                  aria-pressed={source === "jwks-url"}
+                  onClick={() => setSource("jwks-url")}
                 >
-                  base64
+                  JWKS URL
                 </button>
               </div>
-            )}
+            </div>
           </div>
 
           {source === "paste" ? (
             <>
-              <label for="key">
-                {isHmac ? "HMAC secret" : "Public key — PEM, JWK or JWKS"}
-              </label>
               <textarea
                 id="key"
                 class="token-input"
