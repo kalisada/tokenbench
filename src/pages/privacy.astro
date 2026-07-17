@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { SITE, REPO_URL } from "../lib/site";
+import { SITE, REPO_URL, SECURITY_REPORT_URL, SECURITY_POLICY_URL } from "../lib/site";
 ---
 
 <Layout
@@ -120,8 +120,11 @@ import { SITE, REPO_URL } from "../lib/site";
 
     <h2>Contact</h2>
     <p>
-      Questions, or a security issue to report: open an issue on{" "}
-      <a href={REPO_URL}>the repository</a>.
+      Found a security issue — a token or key leaving the browser, an XSS, a crypto flaw?
+      Report it privately through{" "}
+      <a href={SECURITY_REPORT_URL}>GitHub's private advisory form</a> (details in our{" "}
+      <a href={SECURITY_POLICY_URL}>security policy</a>), not a public issue. For anything
+      else, open an issue on <a href={REPO_URL}>the repository</a>.
     </p>
 
     <p style="margin-top:32px"><em>{SITE.owner}. Last updated July 2026.</em></p>

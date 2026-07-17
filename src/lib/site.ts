@@ -9,6 +9,15 @@ export const SITE = {
 /** S30b: the privacy claim is only credible if the code is readable. */
 export const REPO_URL = "https://github.com/kalisada/tokenbench";
 
+/**
+ * Private vulnerability reporting. A security tool needs a channel that isn't a
+ * public issue tracker — this is GitHub's built-in private advisory form. It
+ * requires "Private vulnerability reporting" enabled in the repo's Security
+ * settings; until then, the link 404s.
+ */
+export const SECURITY_REPORT_URL = `${REPO_URL}/security/advisories/new`;
+export const SECURITY_POLICY_URL = `${REPO_URL}/blob/main/SECURITY.md`;
+
 export interface Tool {
   path: string;
   nav: string;

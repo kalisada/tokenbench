@@ -1,0 +1,13 @@
+# TokenBench security contact — https://www.rfc-editor.org/rfc/rfc9116
+#
+# TokenBench is a client-side JWT tool. If you've found a way to break the
+# privacy guarantee (a token or key leaving the browser), an XSS, a crypto or
+# key-parsing flaw, or anything else with security impact, please report it
+# privately via the link below rather than opening a public issue.
+
+Contact: https://github.com/kalisada/tokenbench/security/advisories/new
+Policy: https://github.com/kalisada/tokenbench/blob/main/SECURITY.md
+Preferred-Languages: en
+
+# Expires must stay in the future (RFC 9116). Renew this date at least yearly.
+Expires: 2027-07-16T00:00:00.000Z
