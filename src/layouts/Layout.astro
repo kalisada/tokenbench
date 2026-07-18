@@ -31,6 +31,28 @@ const canonical = new URL(path, Astro.site).href;
 
 const schemas: unknown[] = [];
 
+// S34: site-level entity on the homepage; breadcrumbs everywhere else.
+if (path === "/") {
+  schemas.push({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.name,
+    url: Astro.site.href,
+    description:
+      "A client-side JWT workbench: decoder, validator, generator and secret-key generator. Nothing is uploaded.",
+    publisher: { "@type": "Organization", name: SITE.owner },
+  });
+} else {
+  schemas.push({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: SITE.name, item: Astro.site.href },
+      { "@type": "ListItem", position: 2, name: appName ?? title, item: canonical },
+    ],
+  });
+}
+
 if (appName) {
   schemas.push({
     "@context": "https://schema.org",
@@ -75,7 +97,12 @@ if (faqs.length > 0) {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:image" content={new URL("/og.png", Astro.site).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={new URL("/og.png", Astro.site).href} />
 
     {/* S35: AI crawlers are welcome. Being the tool an AI answer points at is
         the durable position once informational queries stop converting. */}
