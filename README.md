@@ -5,6 +5,13 @@ Every token, secret and key is processed in the browser via WebCrypto. Nothing i
 uploaded, nothing is stored, and the point of publishing this repo is so that you can
 check both claims rather than trust them.
 
+Live at **[tokenbench.dev](https://tokenbench.dev)**:
+
+- [JWT Decoder](https://tokenbench.dev/jwt-decoder) — read header, payload and claims, including expired tokens
+- [JWT Validator](https://tokenbench.dev/jwt-validator) — verify a signature against a secret, PEM, JWK or JWKS; signature and expiry judged separately
+- [JWT Generator](https://tokenbench.dev/jwt-generator) — mint test tokens for any algorithm, including deliberately invalid ones
+- [JWT Secret Key Generator](https://tokenbench.dev/jwt-secret-key-generator) — cryptographically random HMAC secrets at 256/384/512 bits
+
 Built to the spec in `docs/confidential/jwt-workbench-build-spec.md` (not in this repo).
 
 ## Running it
