@@ -5,13 +5,13 @@ import { SITE, REPO_URL, SECURITY_REPORT_URL, SECURITY_POLICY_URL } from "../lib
 
 <Layout
   title="Privacy — what TokenBench does and does not collect"
-  description="TokenBench processes tokens entirely in your browser. Nothing you paste is transmitted or stored. This page lists exactly what is measured, and what never is."
+  description="TokenBench processes tokens entirely in your browser. Nothing you paste is transmitted or stored. No analytics, no cookies, no beacons — and that is verifiable in devtools."
   path="/privacy"
 >
   <h1 class="page-title">Privacy</h1>
   <p class="lede">
-    Short version: your tokens, secrets and keys never leave your browser. This page is the
-    long version, including the anonymous usage counts we do collect.
+    Short version: your tokens, secrets and keys never leave your browser, and this site
+    collects nothing — no analytics, no cookies, no beacons. This page is the long version.
   </p>
 
   <div class="prose">
@@ -60,47 +60,19 @@ import { SITE, REPO_URL, SECURITY_REPORT_URL, SECURITY_POLICY_URL } from "../lib
       precisely the thing this site exists not to do.
     </p>
 
-    <h2>What we do measure</h2>
+    <h2>What we measure</h2>
     <p>
-      We count usage in aggregate, so we know which tools are worth improving and can describe
-      the audience to potential sponsors. The measurement is cookieless, has no cross-site
-      tracking, and records only:
-    </p>
-    <ul>
-      <li>Page views, referrer, and coarse country — the standard, cookieless kind.</li>
-      <li>Which tool was used. Not what it was used on.</li>
-      <li>Which lint categories fired — e.g. that an <code>alg:none</code> warning was shown. Never the token that triggered it.</li>
-      <li>Whether a JWKS fetch was attempted, and whether it failed on CORS. Never the URL.</li>
-      <li>The algorithm name from a token header — the string <code>"RS256"</code>, nothing else from the token.</li>
-      <li>That a copy button was pressed. Not what was copied.</li>
-    </ul>
-
-    <h3>Nothing is sent while you work</h3>
-    <p>
-      Those events are counted in your browser's memory and transmitted in a single request
-      <strong>when you close the page</strong>. This is deliberate. The promise at the top of
-      this page — open devtools, paste a token, watch nothing be sent — has to survive being
-      tested, and it would not survive an analytics beacon firing the moment you paste. So
-      none of them fire while the page is open. Your entire session makes zero analytics
-      requests.
+      Nothing. There is no analytics of any kind on this site: no third-party script, no
+      first-party beacon, no cookies, no fingerprinting. The only usage information that
+      exists is the ordinary server-side request count our host (Cloudflare) produces from
+      serving the pages — which is to say, the fact that a page was loaded. Nothing about
+      what you do on a page is measured or transmitted, ever.
     </p>
     <p>
-      Every one of those events is a name and a count. None can carry the content of anything
-      you paste, and that is enforced rather than merely intended: the analytics code accepts
-      a fixed list of property names, and rejects any value longer than 24 characters or
-      containing the characters a token is built from. A JWT cannot pass through it. That
-      restriction is in <code>src/lib/analytics.ts</code>, it is enforced a second time on the
-      server, and there is a test whose entire job is to try to smuggle a token, a secret and
-      a private key past it.
-    </p>
-
-    <h3>No third-party analytics script</h3>
-    <p>
-      There isn't one. Most sites embed a vendor's JavaScript, which means the vendor's server
-      appears in your Network tab and their code runs on the same page as your token. We
-      don't. The single request described above goes to <code>tokenbench.dev</code> — this
-      site — and our server forwards the counts onward. No third-party host is ever contacted
-      by your browser, and no third-party code ever runs next to your inputs.
+      This is verifiable, not promised: open devtools, use any tool on this site for as long
+      as you like, and watch the Network tab stay empty. Then close the page — still nothing.
+      The <a href={REPO_URL}>source is public</a> if you want to confirm there is no code
+      capable of sending anything.
     </p>
 
     <h2>Storage and cookies</h2>

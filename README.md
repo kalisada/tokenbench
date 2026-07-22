@@ -30,7 +30,7 @@ The build spec's scenarios (S1–S35) are the requirements, so they are also the
 each test is named for the scenario it covers.
 
 ```sh
-npm test             # 85 unit tests: crypto, key parsing, decoding, lints, analytics
+npm test             # 78 unit tests: crypto, key parsing, decoding, lints
 npm run test:e2e     # 28 browser checks against the built site
 ```
 
@@ -69,29 +69,17 @@ It drives the system Chrome; override with `CHROME_PATH` if yours lives elsewher
 
 ## Analytics
 
-S33 wants to know which lints fire and how often a JWKS fetch dies on CORS. S30 promises
-the visitor that pasting a token sends nothing. Those pull against each other, because
-the events S33 wants are triggered by pasting.
-
-The reconciliation: **events are counted in memory and flushed in a single beacon when
-the page closes.** A visitor's whole session makes zero analytics requests, so the
-devtools demo survives being tested. There is no third-party script — the beacon goes to
-`/api/event` on our own origin, and a Cloudflare Pages Function forwards it to Plausible
-server-side, so no third-party host ever appears in a Network tab.
-
-What can be transmitted is a **closed vocabulary** (`src/lib/analytics.ts`), enforced
-again in the Function. Not a pattern — the first version used one, and the test suite
-walked a 19-character secret and a base64url fragment straight through it. Adding a
-metric means adding its permitted values by hand; that friction is the point.
-
-Set `PLAUSIBLE_DOMAIN` (and optionally `PLAUSIBLE_HOST`) in the Pages environment.
+There are none. An earlier design counted anonymous events (which lints fired, JWKS
+CORS failure rates) in memory and flushed them in one first-party beacon on page close —
+carefully allowlisted so no token content could pass. It was removed before launch
+anyway: the site's headline claim is "paste a token, nothing is sent," and a claim that
+needs a footnote is weaker than one that doesn't. Traffic comes from the host's
+server-side request counts; nothing runs in the visitor's browser.
 
 ## Before launch
 
 Live at **tokenbench.dev**.
 
-- [ ] Set `PLAUSIBLE_DOMAIN=tokenbench.dev` in the Cloudflare Pages environment, and add
-      the site in Plausible. Without it the Function drops events silently.
 - [ ] Re-verify the SERP for "jwt validator" before committing further effort.
       The spec's kill criterion: if 2+ more complete-suite entrants have appeared,
       downgrade to phase 1 only and reassess.

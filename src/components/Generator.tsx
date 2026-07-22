@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type { JSX } from "preact";
-import { trackOnce } from "@lib/analytics";
 import { SUPPORTED_ALGS, getAlgorithm } from "@lib/jwt/algorithms";
 import { generateKeyPair, type SecretEncoding } from "@lib/jwt/keys";
 import { defaultPayload, parseRelativeExpiry, signJwt } from "@lib/jwt/sign";
@@ -76,10 +75,6 @@ export default function Generator(): JSX.Element {
         if (!current) return;
         setToken(next);
         setError(undefined);
-        // S33: which algorithms people actually reach for, and how many are
-        // testing their rejection path. The token itself is never touched.
-        trackOnce("tool_used", { tool: "generator" });
-        trackOnce("token_generated", { alg, tamper });
       })
       .catch((e: unknown) => {
         if (!current) return;

@@ -118,12 +118,11 @@ async function main() {
     check("the token appears in zero requests", leaks.length === 0,
       `${leaks.length} request(s) carried it`);
 
-    // The reconciliation of S30 and S33: analytics is counted in memory and sent
-    // only on page exit, so pasting a token fires nothing. This is the assertion
-    // that keeps the devtools demo honest.
+    // There is no analytics on the site at all. Nothing may call /api/event —
+    // the endpoint no longer exists, and no request of any kind is acceptable.
     const beaconsWhileWorking = newRequests.filter((r) => r.url.includes("/api/event"));
-    check("pasting a token fires no analytics beacon", beaconsWhileWorking.length === 0,
-      `${beaconsWhileWorking.length} beacon(s) fired while the page was open`);
+    check("no analytics beacon exists", beaconsWhileWorking.length === 0,
+      `${beaconsWhileWorking.length} request(s) to /api/event`);
 
     // --- S2: expired ------------------------------------------------------
     console.log("\nExpiry (S2/S3)");
@@ -261,15 +260,12 @@ async function main() {
     check("nothing written to sessionStorage", stored.session === "{}", stored.session);
     check("no cookies set", stored.cookies === "", stored.cookies);
 
-    // --- S33: the exit beacon --------------------------------------------
-    console.log("\nAnalytics (S33)");
+    // --- No analytics at all ---------------------------------------------
+    console.log("\nNo analytics");
     const before = requests.length;
 
-    // Drive the visibilitychange path rather than a real navigation: a request
-    // fired during unload is not reliably attributed to the page by the
-    // devtools protocol, so testing via `goto` would be flaky for reasons that
-    // have nothing to do with our code. This is also the handler that carries
-    // the load on mobile, where pagehide frequently never fires at all.
+    // Simulate the page being hidden/closed — the moment the old exit beacon
+    // used to fire. Nothing may be sent now: there is no analytics code left.
     await page.evaluate(() => {
       Object.defineProperty(document, "visibilityState", {
         value: "hidden",
@@ -279,42 +275,10 @@ async function main() {
     });
     await page.waitForTimeout(500);
 
-    const beacons = requests.slice(before).filter((r) => r.url.includes("/api/event"));
-    check("a beacon is sent when the page is closed", beacons.length >= 1,
-      "no beacon fired — the S33 counters would never arrive");
+    const exitRequests = requests.slice(before);
+    check("closing the page sends nothing", exitRequests.length === 0,
+      exitRequests.map((r) => r.url).join(", "));
 
-    const payload = beacons[0]?.body ?? "";
-
-    // Guard against the assertions below passing on an empty body.
-    check("the beacon body is readable", payload.length > 0,
-      "empty body — the checks below would pass vacuously");
-
-    check("the beacon carries no token",
-      payload.length > 0 && !payload.includes(HS256_TOKEN.slice(0, 30)),
-      payload.slice(0, 120));
-
-    // Every event name and every property value must come from the closed
-    // vocabulary. Anything else means user content reached the wire.
-    let vocabOk = false;
-    try {
-      const parsed = JSON.parse(payload);
-      const NAMES = ["pageview", "tool_used", "verify_result", "lint_shown", "jwks_fetch", "token_generated", "copy"];
-      const VALUES = /^[A-Za-z0-9_-]{1,24}$/;
-      vocabOk =
-        Array.isArray(parsed.events) &&
-        parsed.events.length > 0 &&
-        parsed.events.every(
-          (e) =>
-            NAMES.includes(e.name) &&
-            Object.values(e.props ?? {}).every((v) => VALUES.test(String(v))),
-        ) &&
-        !JSON.stringify(parsed).includes(HS256_SECRET);
-    } catch {
-      vocabOk = false;
-    }
-    check("the beacon carries only enumerated values", vocabOk, payload.slice(0, 200));
-
-    if (payload) console.log(`      beacon: ${payload.slice(0, 200)}`);
   } finally {
     await browser.close();
     server.kill();

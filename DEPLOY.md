@@ -94,24 +94,9 @@ Now Google knows the site exists and you can watch whether people find it.
 
 ## Part 3 — Visitor counting
 
-Optional. Skip it if you don't care yet; the site works fine without it and you can
-add it any time.
-
-- Sign up at https://plausible.io (~$9/month).
-- Add a site. When it asks for the domain, enter exactly: `tokenbench.dev`
-- Back in Cloudflare: your Pages project → **Settings** → **Variables and Secrets** →
-  add:
-
-  | Name | Value |
-  |---|---|
-  | `PLAUSIBLE_DOMAIN` | `tokenbench.dev` |
-
-- Redeploy (Pages project → **Deployments** → **Retry deployment** on the latest one).
-
-That's it. Visitor numbers start appearing in Plausible.
-
-**Note:** if you skip this, nothing breaks — the site just doesn't count visitors. It
-does not affect anything a visitor sees.
+The site has no analytics by design — nothing runs in the visitor's browser, and there
+is nothing to configure. Traffic numbers (page views per page, requests, countries)
+come from Cloudflare: dashboard → tokenbench.dev → **Analytics**. That's it.
 
 ---
 

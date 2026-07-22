@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import Analytics from "../components/Analytics.astro";
 import { SITE, TOOLS, REPO_URL } from "../lib/site";
 
 export interface Faq {
@@ -120,7 +119,6 @@ if (faqs.length > 0) {
     {/* S32: offline support, which doubles as a privacy proof. */}
     <script src="/register-sw.js" defer is:inline></script>
 
-    <Analytics />
   </head>
 
   <body>

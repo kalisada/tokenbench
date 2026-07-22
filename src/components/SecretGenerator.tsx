@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "preact/hooks";
 import type { JSX } from "preact";
-import { trackOnce } from "@lib/analytics";
 import {
   SECRET_BITS,
   SECRET_FORMATS,
@@ -18,7 +17,6 @@ export default function SecretGenerator(): JSX.Element {
 
   const regenerate = useCallback((length: SecretBits) => {
     setBytes(randomBytes(length));
-    trackOnce("tool_used", { tool: "secret_generator" });
   }, []);
 
   // Generated after mount: crypto.getRandomValues is a browser API, and the page

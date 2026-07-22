@@ -1,6 +1,5 @@
 import { useCallback, useState } from "preact/hooks";
 import type { JSX } from "preact";
-import { trackOnce } from "@lib/analytics";
 import { JsonView } from "./JsonView";
 import type { Lint } from "@lib/jwt/lint";
 import { describeTimestamp } from "@lib/jwt/decode";
@@ -13,7 +12,6 @@ export function CopyButton({
 }: {
   value: string;
   label?: string;
-  /** S33 counts *that* a copy happened. `value` is never passed to analytics. */
   what?: string;
 }): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -21,7 +19,6 @@ export function CopyButton({
   const copy = useCallback(() => {
     void navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
-      if (what) trackOnce("copy", { what });
       setTimeout(() => setCopied(false), 1400);
     });
   }, [value, what]);
